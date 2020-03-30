@@ -1,0 +1,55 @@
+{
+    "name": "opengis/laravel-geoserver",
+    "description": "Laravel geoserver REST wrapper",
+    "keywords": [
+        "opengis",
+        "laravel-geoserver"
+    ],
+    "homepage": "https://github.com/opengis/laravel-geoserver",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Etienne Deschenes",
+            "email": "etienne@opengis.dev",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.2",
+        "illuminate/support": "^7.3"
+    },
+    "require-dev": {
+        "guzzlehttp/guzzle": "^6.5",
+        "orchestra/testbench": "^5.1",
+        "phpunit/phpunit": "^8.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Opengis\\LaravelGeoserver\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Opengis\\LaravelGeoserver\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Opengis\\LaravelGeoserver\\LaravelGeoserverServiceProvider"
+            ],
+            "aliases": {
+                "GeoserverClient": "Opengis\\LaravelGeoserver\\Facades\\LaravelGeoserverClientFacade"
+            }
+        }
+    }
+}
