@@ -251,49 +251,50 @@ class GeoserverClient
 
             if (!$datastore->isSaved) {
                 !self::workspaceExists($datastore->workspace->name) && $datastore->workspace = self::saveWorkspace($datastore->workspace);
-                if (!self::datastoreExists($datastore->workspace->oldName, $datastore->oldName)) {
-                    $data = [
-                        "dataStore" =>
+                $data = [
+                    "dataStore" =>
+                    [
+                        "name" => $datastore->name,
+                        "description" => $datastore->description,
+                        "type" => $datastore::TYPE,
+                        "enabled" => $datastore->enabled,
+                        "connectionParameters" =>
                         [
-                            "name" => $datastore->name,
-                            "description" => $datastore->description,
-                            "type" => $datastore::TYPE,
-                            "enabled" => $datastore->enabled,
-                            "connectionParameters" =>
-                            [
-                                "entry" => array(
-                                    ["@key" => "schema", "$" => $datastore->schema],
-                                    ["@key" => "Evictor run periodicity", "$" => $datastore->evictorRunPeriodicity],
-                                    ["@key" => "Max open prepared statements", "$" => $datastore->maxOpenPreparedStatements],
-                                    ["@key" => "encode functions", "$" => $datastore->encodeFunctions],
-                                    ["@key" => "Primary key metadata table", "$" => $datastore->primaryKeyMetadataTable],
-                                    ["@key" => "Batch insert size", "$" => $datastore->batchInsertSize],
-                                    ["@key" => "preparedStatements", "$" => $datastore->preparedStatements],
-                                    ["@key" => "database", "$" => $datastore->database],
-                                    ["@key" => "host", "$" => $datastore->host],
-                                    ["@key" => "Loose bbox", "$" => $datastore->looseBbox],
-                                    ["@key" => "SSL mode", "$" => $datastore->sslMode],
-                                    ["@key" => "Estimated extends", "$" => $datastore->estimatedExtends],
-                                    ["@key" => "fetch size", "$" => $datastore->fetchSize],
-                                    ["@key" => "Expose primary keys", "$" => $datastore->exposePrimaryKeys],
-                                    ["@key" => "validate connections", "$" => $datastore->validateConnections],
-                                    ["@key" => "Support on the fly geometry simplification", "$" => $datastore->supportOnTheFlyGeometrySimplification],
-                                    ["@key" => "Connection timeout", "$" => $datastore->connectionTimeout],
-                                    ["@key" => "Callback factory", "$" => $datastore->callbackFactory],
-                                    ["@key" => "port", "$" => $datastore->port],
-                                    ["@key" => "passwd", "$" => $datastore->passwd],
-                                    ["@key" => "min connections", "$" => $datastore->minConnections],
-                                    ["@key" => "dbtype", "$" => $datastore::DBTYPE],
-                                    ["@key" => "max connections", "$" => $datastore->maxConnections],
-                                    ["@key" => "Evictor tests per run", "$" => $datastore->evictorTestsPerRun],
-                                    ["@key" => "Test while idle", "$" => $datastore->testWhileIdle],
-                                    ["@key" => "user", "$" => $datastore->user],
-                                    ["@key" => "Max connection idle time", "$" => $datastore->maxConnectionIdleTime],
+                            "entry" => array(
+                                ["@key" => "schema", "$" => $datastore->schema],
+                                ["@key" => "Evictor run periodicity", "$" => $datastore->evictorRunPeriodicity],
+                                ["@key" => "Max open prepared statements", "$" => $datastore->maxOpenPreparedStatements],
+                                ["@key" => "encode functions", "$" => $datastore->encodeFunctions],
+                                ["@key" => "Primary key metadata table", "$" => $datastore->primaryKeyMetadataTable],
+                                ["@key" => "Batch insert size", "$" => $datastore->batchInsertSize],
+                                ["@key" => "preparedStatements", "$" => $datastore->preparedStatements],
+                                ["@key" => "database", "$" => $datastore->database],
+                                ["@key" => "host", "$" => $datastore->host],
+                                ["@key" => "Loose bbox", "$" => $datastore->looseBbox],
+                                ["@key" => "SSL mode", "$" => $datastore->sslMode],
+                                ["@key" => "Estimated extends", "$" => $datastore->estimatedExtends],
+                                ["@key" => "fetch size", "$" => $datastore->fetchSize],
+                                ["@key" => "Expose primary keys", "$" => $datastore->exposePrimaryKeys],
+                                ["@key" => "validate connections", "$" => $datastore->validateConnections],
+                                ["@key" => "Support on the fly geometry simplification", "$" => $datastore->supportOnTheFlyGeometrySimplification],
+                                ["@key" => "Connection timeout", "$" => $datastore->connectionTimeout],
+                                ["@key" => "Callback factory", "$" => $datastore->callbackFactory],
+                                ["@key" => "port", "$" => $datastore->port],
+                                ["@key" => "passwd", "$" => $datastore->passwd],
+                                ["@key" => "min connections", "$" => $datastore->minConnections],
+                                ["@key" => "dbtype", "$" => $datastore::DBTYPE],
+                                ["@key" => "max connections", "$" => $datastore->maxConnections],
+                                ["@key" => "Evictor tests per run", "$" => $datastore->evictorTestsPerRun],
+                                ["@key" => "Test while idle", "$" => $datastore->testWhileIdle],
+                                ["@key" => "user", "$" => $datastore->user],
+                                ["@key" => "Max connection idle time", "$" => $datastore->maxConnectionIdleTime],
 
-                                )
-                            ]
+                            )
                         ]
-                    ];
+                    ]
+                ];
+
+                if (!self::datastoreExists($datastore->workspace->oldName, $datastore->oldName)) {
 
                     Http::withBasicAuth(self::$username, self::$password)
                         ->accept('text/html')
@@ -302,49 +303,6 @@ class GeoserverClient
                         ->throw();
                     return self::datastore($datastore->workspace->name, $datastore->name);
                 } else {
-                    $data = [
-                        "dataStore" =>
-                        [
-                            "name" => $datastore->name,
-                            "description" => $datastore->description,
-                            "type" => $datastore::TYPE,
-                            "enabled" => $datastore->enabled,
-                            "connectionParameters" =>
-                            [
-                                "entry" => array(
-                                    ["@key" => "passwd", "$" => $datastore->passwd],
-                                    ["@key" => "schema", "$" => $datastore->schema],
-                                    ["@key" => "Evictor run periodicity", "$" => $datastore->evictorRunPeriodicity],
-                                    ["@key" => "Max open prepared statements", "$" => $datastore->maxOpenPreparedStatements],
-                                    ["@key" => "encode functions", "$" => $datastore->encodeFunctions],
-                                    ["@key" => "Primary key metadata table", "$" => $datastore->primaryKeyMetadataTable],
-                                    ["@key" => "Batch insert size", "$" => $datastore->batchInsertSize],
-                                    ["@key" => "preparedStatements", "$" => $datastore->preparedStatements],
-                                    ["@key" => "database", "$" => $datastore->database],
-                                    ["@key" => "host", "$" => $datastore->host],
-                                    ["@key" => "Loose bbox", "$" => $datastore->looseBbox],
-                                    ["@key" => "SSL mode", "$" => $datastore->sslMode],
-                                    ["@key" => "Estimated extends", "$" => $datastore->estimatedExtends],
-                                    ["@key" => "fetch size", "$" => $datastore->fetchSize],
-                                    ["@key" => "Expose primary keys", "$" => $datastore->exposePrimaryKeys],
-                                    ["@key" => "validate connections", "$" => $datastore->validateConnections],
-                                    ["@key" => "Support on the fly geometry simplification", "$" => $datastore->supportOnTheFlyGeometrySimplification],
-                                    ["@key" => "Connection timeout", "$" => $datastore->connectionTimeout],
-                                    ["@key" => "Callback factory", "$" => $datastore->callbackFactory],
-                                    ["@key" => "port", "$" => $datastore->port],
-                                    ["@key" => "min connections", "$" => $datastore->minConnections],
-                                    ["@key" => "dbtype", "$" => $datastore::DBTYPE],
-                                    ["@key" => "max connections", "$" => $datastore->maxConnections],
-                                    ["@key" => "Evictor tests per run", "$" => $datastore->evictorTestsPerRun],
-                                    ["@key" => "Test while idle", "$" => $datastore->testWhileIdle],
-                                    ["@key" => "user", "$" => $datastore->user],
-                                    ["@key" => "Max connection idle time", "$" => $datastore->maxConnectionIdleTime],
-
-                                )
-                            ]
-                        ]
-                    ];
-
 
                     Http::withBasicAuth(self::$username, self::$password)
                         ->accept('text/html')
