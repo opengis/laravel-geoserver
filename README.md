@@ -15,14 +15,21 @@ _It is only compatible with Laravel 7 and up since it uses Illuminate\Support\Fa
 
 You can install the package via composer:
 
+**Not yet published on packagist**
+
 ```bash
-composer require opengis/laravel-geoserver
+#
+# Not yet published on packagist
+#
+# composer require opengis/laravel-geoserver
 ```
 
 ## Usage
 
+**Not yet published on packagist**
+
 ``` php
-// Usage description here
+
 ```
 
 ### Testing
