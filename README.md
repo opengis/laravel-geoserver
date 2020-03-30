@@ -5,7 +5,7 @@
 [![Quality Score](https://img.shields.io/scrutinizer/g/opengis/laravel-geoserver.svg?style=flat-square)](https://scrutinizer-ci.com/g/opengis/laravel-geoserver)
 [![Total Downloads](https://img.shields.io/packagist/dt/opengis/laravel-geoserver.svg?style=flat-square)](https://packagist.org/packages/opengis/laravel-geoserver)
 
-This is where your description should go. Try and limit it to a paragraph or two, and maybe throw in a mention of what PSRs you support to avoid any confusion with users and contributors.
+Laravel fluent object oriented API for managing workspaces, PostGis datastores and publishing vector PostGis layers.
 
 ## Installation
 
