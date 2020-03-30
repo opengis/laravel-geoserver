@@ -108,7 +108,7 @@ class LaravelGeoserverTest extends TestCase
 
         $workspace = GeoserverClient::workspace('workspace1');
         $this->assertInstanceOf(Workspace::class, $workspace);
-        $this->assertEquals("workspace1", $workspace->name);
+        $this->assertEquals('workspace1', $workspace->name);
     }
 
     /** @test */
