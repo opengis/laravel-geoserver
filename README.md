@@ -1,4 +1,4 @@
-# Very short description of the package
+# laravel-geoserver
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/opengis/laravel-geoserver.svg?style=flat-square)](https://packagist.org/packages/opengis/laravel-geoserver)
 [![Build Status](https://img.shields.io/travis/opengis/laravel-geoserver/master.svg?style=flat-square)](https://travis-ci.org/opengis/laravel-geoserver)
