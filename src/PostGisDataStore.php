@@ -2,11 +2,6 @@
 
 namespace Opengis\LaravelGeoserver;
 
-use Illuminate\Support\Collection;
-use Opengis\LaravelGeoserver\DataStore;
-
-
-
 class PostGisDataStore extends DataStore
 {
     public const TYPE = 'PostGIS';
@@ -39,10 +34,8 @@ class PostGisDataStore extends DataStore
     private $user = '';
     private $maxConnectionIdleTime = 300;
 
-
-    function __construct(String $name, Workspace $workspace, String $description = null, String $host, int $port, String $database, String $schema, String $user, String $passwd, $isSaved = false)
+    public function __construct(string $name, Workspace $workspace, string $description = null, string $host, int $port, string $database, string $schema, string $user, string $passwd, $isSaved = false)
     {
-
         parent::__construct($name, $workspace, $description, $isSaved);
 
         $this->host = $host;
@@ -63,18 +56,19 @@ class PostGisDataStore extends DataStore
         if (property_exists($this, $property)) {
             return $this->$property;
         }
+
         return parent::__get($property);
     }
 
     public function __set($property, $value)
     {
         if (property_exists($this, $property)) {
-
-
-            $this->isSaved = !($this->$property !== $value);
+            $this->isSaved = ! ($this->$property !== $value);
             $this->$property = $value;
+
             return $this;
         }
+
         return parent::__set($property, $value);
     }
 }

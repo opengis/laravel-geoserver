@@ -2,20 +2,17 @@
 
 namespace Opengis\LaravelGeoserver\Tests;
 
-
-
-use Illuminate\Support\Str;
-use Orchestra\Testbench\TestCase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
-use Opengis\LaravelGeoserver\Workspace;
+use Illuminate\Support\Str;
 use Opengis\LaravelGeoserver\GeoserverClient;
-use Opengis\LaravelGeoserver\PostGisDataStore;
 use Opengis\LaravelGeoserver\LaravelGeoserverServiceProvider;
+use Opengis\LaravelGeoserver\PostGisDataStore;
+use Opengis\LaravelGeoserver\Workspace;
+use Orchestra\Testbench\TestCase;
 
 class LaravelGeoserverTest extends TestCase
 {
-
     // public function setUp(): void
     // {
     //     parent::setUp();
@@ -33,7 +30,6 @@ class LaravelGeoserverTest extends TestCase
         // Http::fake();
         $this->assertInstanceOf(GeoserverClient::class, GeoserverClient::create());
     }
-
 
     /** @test */
     public function client_returns_a_product_version()
@@ -118,7 +114,6 @@ class LaravelGeoserverTest extends TestCase
     /** @test */
     public function workspace_and_datastores_can_be_persisted_updated_and_deleted_on_server()
     {
-
         $workspaceName = Str::random(32);
         $workspace = Workspace::create($workspaceName)->save();
 

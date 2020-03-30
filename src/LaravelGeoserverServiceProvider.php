@@ -3,8 +3,6 @@
 namespace Opengis\LaravelGeoserver;
 
 use Illuminate\Support\ServiceProvider;
-use Opengis\LaravelGeoserver\GeoserverClient;
-
 
 class LaravelGeoserverServiceProvider extends ServiceProvider
 {
@@ -23,7 +21,7 @@ class LaravelGeoserverServiceProvider extends ServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config/config.php' => config_path('laravel-geoserver.php'),
+                __DIR__.'/../config/config.php' => config_path('laravel-geoserver.php'),
             ], 'config');
 
             // Publishing the views.
@@ -52,11 +50,11 @@ class LaravelGeoserverServiceProvider extends ServiceProvider
     public function register()
     {
         // Automatically apply the package configuration
-        $this->mergeConfigFrom(__DIR__ . '/../config/config.php', 'laravel-geoserver');
+        $this->mergeConfigFrom(__DIR__.'/../config/config.php', 'laravel-geoserver');
 
         // Register the main classes to use with the facade
         $this->app->singleton('laravel-geoserver-client', function () {
             return new GeoserverClient();
-        });;
+        });
     }
 }
