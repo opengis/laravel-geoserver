@@ -7,6 +7,6 @@ return [
 
     'uri' => 'http://localhost:8080/geoserver',
     'username' => 'admin',
-    'password' => '12345'
+    'password' => '12345',
 
 ];

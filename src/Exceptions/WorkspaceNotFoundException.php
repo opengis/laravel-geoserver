@@ -6,5 +6,5 @@ use Exception;
 
 class WorkspaceNotFoundException extends Exception
 {
-    protected $message = "Workspace not found!";
+    protected $message = 'Workspace not found!';
 }
