@@ -72,8 +72,7 @@ class GeoserverClient
         $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
             ->acceptJson()
             ->get(self::$baseUri . 'rest/workspaces.json')
-            ->throw()
-            ->body());
+            ->throw());
 
         if (!is_null($response)) {
             if (isset($response->workspaces->workspace)) {
