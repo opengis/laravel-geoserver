@@ -6,7 +6,8 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/opengis/laravel-geoserver.svg?style=flat-square)](https://packagist.org/packages/opengis/laravel-geoserver)
 
 Laravel fluent object oriented API for managing workspaces, PostGis datastores and publishing vector PostGis layers.
-*It is still in very early development process*
+
+**It is still in very early development process**
 
 _It is only compatible with Laravel 7 and up since it uses Illuminate\Support\Facades\Http (wrapper for Guzzle)_
 
