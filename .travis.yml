@@ -1,19 +1,29 @@
 language: php
 
+services:
+  - docker
+
 php:
   - 7.4
 
 env:
+  global:
+    - GEOSERVER_URL="http://127.0.0.1:8081/geoserver/"
+    - GEOSERVER_USER="admin"
+    - GEOSERVER_PASSWORD="geoserver"
   matrix:
     - COMPOSER_FLAGS="--prefer-lowest"
+    - COMPOSER_FLAGS="--prefer-stable"
     - COMPOSER_FLAGS=""
 
 before_script:
   - travis_retry composer self-update
   - travis_retry composer update ${COMPOSER_FLAGS} --no-interaction --prefer-source
+  - docker-compose -f ./tests/docker-compose.yml up -d && sleep 60
 
 script:
   - vendor/bin/phpunit --coverage-text --coverage-clover=coverage.clover
 
 after_script:
   - php vendor/bin/ocular code-coverage:upload --format=php-clover coverage.clover
+  - docker-compose -f ./tests/docker-compose.yml down

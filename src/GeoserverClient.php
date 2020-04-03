@@ -2,11 +2,14 @@
 
 namespace Opengis\LaravelGeoserver;
 
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Opengis\LaravelGeoserver\Exceptions\TableNotFoundException;
 use Opengis\LaravelGeoserver\Exceptions\DatastoreNotFoundException;
 use Opengis\LaravelGeoserver\Exceptions\WorkspaceNotFoundException;
+use Opengis\LaravelGeoserver\Exceptions\GeomColumnNotFoundException;
 
 class GeoserverClient
 {
@@ -22,7 +25,7 @@ class GeoserverClient
         is_null($username) && $username = config('laravel-geoserver.username');
         is_null($password) && $password = config('laravel-geoserver.password');
 
-        ! Str::of($baseUri)->endsWith('/') && $baseUri = $baseUri.'/';
+        !Str::of($baseUri)->endsWith('/') && $baseUri = $baseUri . '/';
 
         self::$baseUri = $baseUri;
         self::$username = $username;
@@ -39,7 +42,7 @@ class GeoserverClient
     private function testConnection()
     {
         self::$client::withBasicAuth(self::$username, self::$password)
-            ->get(self::$baseUri.'rest/about/version')
+            ->get(self::$baseUri . 'rest/about/version')
             ->throw();
     }
 
@@ -47,7 +50,7 @@ class GeoserverClient
     {
         $resources = json_decode(Http::withBasicAuth(self::$username, self::$password)
             ->acceptJson()
-            ->get(self::$baseUri.'rest/about/version')
+            ->get(self::$baseUri . 'rest/about/version')
             ->throw()
             ->body())->about->resource;
 
@@ -56,16 +59,18 @@ class GeoserverClient
                 return $resource->Version;
             }
         }
+
+        return 'Unknown';
     }
 
     public static function workspaces()
     {
         $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
             ->acceptJson()
-            ->get(self::$baseUri.'rest/workspaces.json')
+            ->get(self::$baseUri . 'rest/workspaces.json')
             ->throw());
 
-        if (! is_null($response)) {
+        if (!is_null($response)) {
             if (isset($response->workspaces->workspace)) {
                 return collect($response->workspaces->workspace)->map(function ($item) {
                     return self::workspace($item->name);
@@ -79,11 +84,11 @@ class GeoserverClient
     public static function workspace(string $name)
     {
         $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
-            ->get(self::$baseUri.'rest/workspaces/'.$name.'.json')
+            ->get(self::$baseUri . 'rest/workspaces/' . $name . '.json')
             ->throw()
             ->body());
 
-        if (! is_null($response)) {
+        if (!is_null($response)) {
             return Workspace::create($response->workspace->name, $response->workspace->isolated, true);
         }
         throw new WorkspaceNotFoundException;
@@ -92,10 +97,10 @@ class GeoserverClient
     public static function workspaceExists(string $name)
     {
         $body = Http::withBasicAuth(self::$username, self::$password)
-            ->get(self::$baseUri.'rest/workspaces/'.$name.'.json')
+            ->get(self::$baseUri . 'rest/workspaces/' . $name . '.json')
             ->body();
 
-        return ! Str::of($body)->contains('No such workspace');
+        return !Str::of($body)->contains('No such workspace');
     }
 
     public static function deleteWorkspace(Workspace $workspace)
@@ -103,7 +108,7 @@ class GeoserverClient
         try {
             if (self::workspaceExists($workspace->oldName)) {
                 Http::withBasicAuth(self::$username, self::$password)
-                    ->delete(self::$baseUri.'rest/workspaces/'.$workspace->oldName.'?recurse=true')
+                    ->delete(self::$baseUri . 'rest/workspaces/' . $workspace->oldName . '?recurse=true')
                     ->throw();
             }
 
@@ -117,18 +122,18 @@ class GeoserverClient
     {
         $data = ['workspace' => ['name' => $workspace->name, 'isolated' => $workspace->isolated]];
 
-        if (! $workspace->isSaved) {
-            if (! self::workspaceExists($workspace->oldName)) {
+        if (!$workspace->isSaved) {
+            if (!self::workspaceExists($workspace->oldName)) {
                 Http::withBasicAuth(self::$username, self::$password)
                     ->accept('text/html')
                     ->asJson()
-                    ->post(self::$baseUri.'rest/workspaces', $data)
+                    ->post(self::$baseUri . 'rest/workspaces', $data)
                     ->throw();
             } else {
                 Http::withBasicAuth(self::$username, self::$password)
                     ->accept('text/html')
                     ->asJson()
-                    ->put(self::$baseUri.'rest/workspaces/'.$workspace->oldName, $data)
+                    ->put(self::$baseUri . 'rest/workspaces/' . $workspace->oldName, $data)
                     ->throw();
             }
 
@@ -142,11 +147,11 @@ class GeoserverClient
     {
         $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
             ->acceptJson()
-            ->get(self::$baseUri.'rest/workspaces/'.$workspace->oldName.'/datastores.json')
+            ->get(self::$baseUri . 'rest/workspaces/' . $workspace->oldName . '/datastores.json')
             ->throw()
             ->body());
 
-        if (! is_null($response)) {
+        if (!is_null($response)) {
             if (isset($response->dataStores->dataStore)) {
                 return collect($response->dataStores->dataStore)->map(function ($item) use ($workspace) {
                     return self::datastore($workspace->oldName, $item->name);
@@ -160,31 +165,32 @@ class GeoserverClient
     public static function datastoreExists(string $workspaceName, string $datastoreName)
     {
         $body = Http::withBasicAuth(self::$username, self::$password)
-            ->get(self::$baseUri.'rest/workspaces/'.$workspaceName.'/datastores/'.$datastoreName.'.json')
+            ->get(self::$baseUri . 'rest/workspaces/' . $workspaceName . '/datastores/' . $datastoreName . '.json')
             ->body();
 
-        return ! Str::of($body)->contains('No such datastore');
+        return !Str::of($body)->contains('No such datastore');
     }
 
     public static function datastore(string $workspaceName, string $datastoreName)
     {
         $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
-            ->get(self::$baseUri.'rest/workspaces/'.$workspaceName.'/datastores/'.$datastoreName.'.json')
+            ->get(self::$baseUri . 'rest/workspaces/' . $workspaceName . '/datastores/' . $datastoreName . '.json')
             ->throw()
             ->body());
 
-        if (! is_null($response)) {
+        if (!is_null($response)) {
             $ds = $response->dataStore;
 
             if ($ds->type == 'PostGIS') {
                 $entries = collect($ds->connectionParameters->entry)->mapWithKeys(function ($item) {
                     return [$item->{'@key'} => $item->{'$'}];
                 })->toArray();
-
+                $description = '';
+                isset($ds->description) && $description = $ds->description;
                 $datastore = PostGisDataStore::create(
                     $ds->name,
                     self::workspace($ds->workspace->name),
-                    $ds->description,
+                    $description,
                     $entries['host'],
                     (int) $entries['port'],
                     $entries['database'],
@@ -227,8 +233,8 @@ class GeoserverClient
     public static function saveDatastore(Datastore $datastore)
     {
         if ($datastore instanceof PostGisDataStore) {
-            if (! $datastore->isSaved) {
-                ! self::workspaceExists($datastore->workspace->name) && $datastore->workspace = self::saveWorkspace($datastore->workspace);
+            if (!$datastore->isSaved) {
+                !self::workspaceExists($datastore->workspace->name) && $datastore->workspace = self::saveWorkspace($datastore->workspace);
                 $data = [
                     'dataStore' => [
                         'name' => $datastore->name,
@@ -264,17 +270,16 @@ class GeoserverClient
                                 ['@key' => 'Test while idle', '$' => $datastore->testWhileIdle],
                                 ['@key' => 'user', '$' => $datastore->user],
                                 ['@key' => 'Max connection idle time', '$' => $datastore->maxConnectionIdleTime],
-
                             ],
                         ],
                     ],
                 ];
 
-                if (! self::datastoreExists($datastore->workspace->oldName, $datastore->oldName)) {
+                if (!self::datastoreExists($datastore->workspace->oldName, $datastore->oldName)) {
                     Http::withBasicAuth(self::$username, self::$password)
                         ->accept('text/html')
                         ->asJson()
-                        ->post(self::$baseUri.'rest/workspaces/'.$datastore->workspace->name.'/datastores', $data)
+                        ->post(self::$baseUri . 'rest/workspaces/' . $datastore->workspace->name . '/datastores', $data)
                         ->throw();
 
                     return self::datastore($datastore->workspace->name, $datastore->name);
@@ -282,7 +287,7 @@ class GeoserverClient
                     Http::withBasicAuth(self::$username, self::$password)
                         ->accept('text/html')
                         ->asJson()
-                        ->put(self::$baseUri.'rest/workspaces/'.$datastore->workspace->name.'/datastores/'.$datastore->oldName, $data)
+                        ->put(self::$baseUri . 'rest/workspaces/' . $datastore->workspace->name . '/datastores/' . $datastore->oldName, $data)
                         ->throw();
 
                     return self::datastore($datastore->workspace->name, $datastore->name);
@@ -298,7 +303,7 @@ class GeoserverClient
         try {
             if (self::datastoreExists($datastore->workspace->oldName, $datastore->oldName)) {
                 Http::withBasicAuth(self::$username, self::$password)
-                    ->delete(self::$baseUri.'rest/workspaces/'.$datastore->workspace->oldName.'/datastores/'.$datastore->oldName.'?recurse=true')
+                    ->delete(self::$baseUri . 'rest/workspaces/' . $datastore->workspace->oldName . '/datastores/' . $datastore->oldName . '?recurse=true')
                     ->throw();
             }
 
@@ -307,4 +312,186 @@ class GeoserverClient
             return false;
         }
     }
+
+    public static function featureTypeExists(string $workspaceName, string $datastoreName, string $featureTypeName)
+    {
+        $body = Http::withBasicAuth(self::$username, self::$password)
+            ->get(self::$baseUri . 'rest/workspaces/' . $workspaceName . '/datastores/' . $datastoreName . '/featuretypes/' . $featureTypeName . '.json')
+            ->body();
+
+        return !Str::of($body)->contains('No such feature type');
+    }
+
+    public static function featureTypes(Datastore $datastore)
+    {
+        $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
+            ->acceptJson()
+            ->get(self::$baseUri . 'rest/workspaces/' . $datastore->workspace->oldName . '/datastores/' . $datastore->oldName . '/featuretypes.json')
+            ->throw()
+            ->body());
+
+        if (!is_null($response)) {
+            if (isset($response->featureTypes->featureType)) {
+                return collect($response->featureTypes->featureType)->map(function ($item) use ($datastore) {
+                    return self::featureType($datastore->workspace->name, $datastore->name, $item->name);
+                });
+            }
+        }
+
+        return new Collection;
+    }
+
+    public static function featureType(string $workspaceName, string $datastoreName, string $featureTypeName)
+    {
+        $datastore = self::datastore($workspaceName, $datastoreName);
+
+        $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
+            ->acceptJson()
+            ->get(self::$baseUri . 'rest/workspaces/' . $datastore->workspace->oldName . '/datastores/' . $datastore->oldName . '/featuretypes/' . $featureTypeName . '.json')
+            ->throw()
+            ->body());
+
+        if (!is_null($response)) {
+            if (isset($response->featureType)) {
+                $ft = $response->featureType;
+                $layer = PostGisLayer::create($ft->name, $ft->nativeName, $datastore);
+                $layer->oldName = $ft->name;
+                $layer->title = $ft->title;
+                $layer->isSaved = true;
+
+                return $layer;
+            }
+        }
+
+        throw new DatastoreNotFoundException;
+    }
+
+    public static function saveFeatureType(PostGisLayer $layer)
+    {
+        if (!self::tableExists($layer->tableName, $layer->datastore->schema)) {
+            throw new TableNotFoundException;
+        }
+        if (!self::tableHasGeom($layer->tableName, $layer->datastore->schema)) {
+            throw new GeomColumnNotFoundException;
+        }
+        $srid = self::getSrid($layer->tableName, $layer->datastore->schema);
+        $srid == 0 && $srid = 4326;
+
+        if (!self::featureTypeExists($layer->datastore->workspace->name, $layer->datastore->name, $layer->name)) {
+            $data = [
+                'featureType' => [
+                    'name' => $layer->name,
+                    'nativeName' => $layer->tableName,
+                    'title' => strlen($layer->title) > 0 ? $layer->title : $layer->name,
+                    'nativeCRS' => 'EPSG:' . $srid,
+                    'srs' => 'EPSG:' . $srid,
+                    'nativeBoundingBox' => [
+                        'minx' => -180,
+                        'maxx' => 180,
+                        'miny' => -90,
+                        'maxy' => 90,
+                        'crs' => 'EPSG:' . $srid
+                    ],
+                ]
+            ];
+
+            Http::withBasicAuth(self::$username, self::$password)
+            ->accept('text/html')
+            ->asJson()
+            ->post(self::$baseUri . 'rest/workspaces/' . $layer->datastore->workspace->name . '/datastores/' . $layer->datastore->name . '/featuretypes', $data)
+            ->throw();
+        } else {
+            $data = [
+                'featureType' => [
+                    'name' => $layer->name,
+                    'nativeName' => $layer->tableName,
+                    'title' => strlen($layer->title) > 0 ? $layer->title : $layer->name,
+                    'nativeCRS' => 'EPSG:' . $srid,
+                    'srs' => 'EPSG:' . $srid,
+                ]
+            ];
+            // dd(self::$baseUri . 'rest/workspaces/' . $layer->datastore->workspace->name . '/datastores/' . $layer->datastore->name . '/featuretypes/' . $layer->oldName);
+            Http::withBasicAuth(self::$username, self::$password)
+            ->accept('text/html')
+            ->asJson()
+            ->put(self::$baseUri . 'rest/workspaces/' . $layer->datastore->workspace->name . '/datastores/' . $layer->datastore->name . '/featuretypes/' . $layer->oldName, $data)
+            ->throw();
+        }
+
+        return self::featureType($layer->datastore->workspace->name, $layer->datastore->name, $layer->name);
+    }
+
+    public static function deleteFeatureType(PostGisLayer $layer)
+    {
+        try {
+            if (self::featureTypeExists($layer->datastore->workspace->oldName, $layer->datastore->oldName, $layer->oldName)) {
+                Http::withBasicAuth(self::$username, self::$password)
+                    ->delete(self::$baseUri . 'rest/workspaces/' . $layer->datastore->workspace->oldName . '/datastores/' . $layer->datastore->oldName . '/featuretypes/' . $layer->oldName . '?recurse=true')
+                    ->throw();
+            }
+
+            return true;
+        } catch (Exception $ex) {
+            return false;
+        }
+    }
+
+    protected static function getSrid($tableName, $schemaName)
+    {
+        $field = DB::table('information_schema.columns')
+            ->select('column_name', 'udt_name')
+            ->whereRaw("table_name = ? and table_schema = ? and (udt_name = 'geometry' or udt_name = 'geography')")
+            ->setBindings([$tableName, $schemaName])
+            ->get();
+
+        if ($field->count() > 0) {
+            if ($field->first()->udt_name == 'geometry') {
+                $srid = DB::table('geometry_columns')
+                    ->select('srid')
+                    ->whereRaw('f_table_name = ? and f_table_schema = ? and f_geometry_column = ?')
+                    ->setBindings([$tableName, $schemaName, $field->first()->column_name])
+                    ->get();
+            } elseif ($field->first()->udt_name == 'geography') {
+                {
+                    $srid = DB::table('geography_columns')
+                        ->select('srid')
+                        ->whereRaw('f_table_name = ? and f_table_schema = ? and f_geography_column = ?')
+                        ->setBindings([$tableName, $schemaName, $field->first()->column_name])
+                        ->get();
+                }
+            }
+            if ($srid) {
+                return $srid->first()->srid;
+            }
+        }
+
+        return 0;
+    }
+
+    protected static function tableHasGeom(string $table, string $schema)
+    {
+        $field = DB::table('information_schema.columns')
+        ->select('column_name', 'udt_name')
+        ->whereRaw("table_name = ? and table_schema = ? and (udt_name = 'geometry' or udt_name = 'geography')")
+        ->setBindings([$table, $schema])
+        ->get();
+
+        return ($field->count() > 0);
+    }
+
+    protected static function tableExists(string $table, string $schema)
+    {
+        $table = DB::table('information_schema.columns')
+        ->whereRaw('table_name = ? and table_schema = ?')
+        ->setBindings([$table, $schema])
+        ->get();
+
+        return ($table->count() > 0);
+    }
+
+    // SELECT EXISTS (
+    //     SELECT FROM information_schema.tables
+    //     WHERE  table_schema = 'schema_name'
+    //     AND    table_name   = 'table_name'
+    //     );
 }

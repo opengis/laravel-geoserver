@@ -7,26 +7,22 @@
 
 Laravel fluent object oriented API for managing workspaces, PostGis datastores and publishing vector PostGis layers.
 
-**It is still in very early development process**
+*It is still in very early development process*
 
 _It is only compatible with Laravel 7 and up since it uses Illuminate\Support\Facades\Http (wrapper for Guzzle)_
+_Also, it is only compatible with php 7.4 and up_
 
 ## Installation
 
 You can install the package via composer:
 
-**Not yet published on packagist**
 
 ```bash
-#
-# Not yet published on packagist
-#
-# composer require opengis/laravel-geoserver
+composer require opengis/laravel-geoserver
 ```
 
 ## Usage
 
-**Not yet published on packagist**
 
 ``` php
 

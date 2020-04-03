@@ -2,19 +2,21 @@
 
 namespace Opengis\LaravelGeoserver;
 
-class Workspace
+class PostGisLayer
 {
     private $isSaved = false;
     private $name = '';
     private $oldName = '';
-    private $isolated = false;
-    private $forbiddenSet = ['forbiddenSet', 'isSaved', 'oldName'];
+    private $tableName = '';
+    private $title = '';
+    private $datastore;
 
-    public function __construct(string $name, $isolated = false, $isSaved = false)
+    public function __construct(String $name, String $tableName, PostGisDataStore $datastore, $isSaved = false)
     {
         $this->name = $name;
         $this->oldName = $name;
-        $this->isolated = $isolated;
+        $this->tableName = $tableName;
+        $this->datastore = $datastore;
         $this->isSaved = $isSaved;
     }
 
@@ -32,7 +34,7 @@ class Workspace
 
     public function __set($property, $value)
     {
-        if (property_exists($this, $property) && !in_array($property, $this->forbiddenSet)) {
+        if (property_exists($this, $property)) {
             $property === 'name' && $this->oldName = $this->name;
             $this->isSaved = !($this->$property !== $value);
             $this->$property = $value;
@@ -43,19 +45,14 @@ class Workspace
 
     public function save()
     {
-        return GeoserverClient::saveWorkspace($this);
+        return GeoserverClient::saveFeatureType($this);
     }
 
     public function delete()
     {
-        $this->isSaved = !GeoserverClient::deleteWorkspace($this);
+        $this->isSaved = !GeoserverClient::deleteFeatureType($this);
         $this->name = $this->oldName;
 
         return !$this->isSaved;
-    }
-
-    public function datastores()
-    {
-        return GeoserverClient::datastores($this);
     }
 }

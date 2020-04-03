@@ -26,4 +26,14 @@
         <log type="coverage-text" target="build/coverage.txt"/>
         <log type="coverage-clover" target="build/logs/clover.xml"/>
     </logging>
+    <php>
+        <server name="APP_ENV" value="testing"/>
+        <server name="DB_CONNECTION" value="pgsql"/>
+        <server name="DB_DATABASE" value="postgis"/>
+        <server name="DB_HOST" value="127.0.0.1"/>
+        <server name="DB_PORT" value="55432"/>
+        <server name="DB_USERNAME" value="postgis"/>
+        <server name="DB_PASSWORD" value="12345"/>
+        <server name="DB_SCHEMA" value="public"/>
+    </php>
 </phpunit>

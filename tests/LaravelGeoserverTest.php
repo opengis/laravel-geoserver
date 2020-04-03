@@ -2,169 +2,117 @@
 
 namespace Opengis\LaravelGeoserver\Tests;
 
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-use Opengis\LaravelGeoserver\GeoserverClient;
-use Opengis\LaravelGeoserver\LaravelGeoserverServiceProvider;
-use Opengis\LaravelGeoserver\PostGisDataStore;
-use Opengis\LaravelGeoserver\Workspace;
 use Orchestra\Testbench\TestCase;
+use Illuminate\Support\Collection;
+use Opengis\LaravelGeoserver\Workspace;
+use Opengis\LaravelGeoserver\PostGisLayer;
+use Opengis\LaravelGeoserver\GeoserverClient;
+use Opengis\LaravelGeoserver\PostGisDataStore;
+use Opengis\LaravelGeoserver\LaravelGeoserverServiceProvider;
 
 class LaravelGeoserverTest extends TestCase
 {
-    // public function setUp(): void
-    // {
-    //     parent::setUp();
-    //     // Http::fake();
-    // }
+    public function setUp(): void
+    {
+        parent::setUp();
+        GeoserverClient::create();
+    }
 
     protected function getPackageProviders($app)
     {
         return [LaravelGeoserverServiceProvider::class];
     }
 
+    protected function getEnvironmentSetUp($app)
+    {
+        include_once __DIR__ . '/../database/migrations/create_locations_table.php';
+
+        (new \CreateLocationsTable)->up();
+    }
+
     /** @test */
     public function client_instanciate_and_connects()
     {
-        Http::fake();
         $this->assertInstanceOf(GeoserverClient::class, GeoserverClient::create());
     }
 
     /** @test */
     public function client_returns_a_product_version()
     {
-        Http::fake(function ($request) {
-            return Http::response('{
-                "about": {
-                    "resource": [
-                        {
-                            "@name": "GeoServer",
-                            "Build-Timestamp": "20-Jan-2020 18:21",
-                            "Version": "2.16.2",
-                            "Git-Revision": "d68399795ec4a5cff98e2a2c6cc472ec1628e368"
-                        },
-                        {
-                            "@name": "GeoTools",
-                            "Build-Timestamp": "20-Jan-2020 17:45",
-                            "Version": 22.2,
-                            "Git-Revision": "648dda215d0ec25671eabc119de4d2be80a992fd"
-                        },
-                        {
-                            "@name": "GeoWebCache",
-                            "Version": "1.16.2",
-                            "Git-Revision": "1.16.x/84a6736412921b9e6a587f0f150822eb3bf238bc"
-                        }
-                    ]
-                }
-            }', 200);
-        });
-
         $version = GeoserverClient::getVersion('geoserver');
 
         $this->assertTrue(strlen($version) > 0);
     }
 
-    // /** @test */
-    public function client_returns_a_collection_of_workspaces()
+    /** @test */
+    public function workspace_and_datastores_can_be_persisted_updated_and_deleted_on_server()
     {
-        Http::fake(function ($request) {
-            return Http::response('{
-                "workspaces": {
-                    "workspace": [
-                            {
-                                "name": "workspace1",
-                                "href": "http://localhost:8080/geoserver/rest/workspaces/workspace1.json"
-                            },
-                            {
-                                "name": "workspace2",
-                                "href": "http://localhost:8080/geoserver/rest/workspaces/workspace2.json"
-                            }
-                        ]
-                    }
-                }', 200);
-        });
+        $workspaceName = Str::random(32);
+        $workspace = Workspace::create($workspaceName)->save();
+
+        $this->assertInstanceOf(Workspace::class, $workspace);
+        $this->assertEquals($workspaceName, $workspace->name);
 
         $workspaces = GeoserverClient::workspaces();
         $this->assertInstanceOf(Collection::class, $workspaces);
-        $this->assertCount(2, $workspaces);
-    }
 
-    /** @test */
-    public function client_returns_a_single_workspace()
-    {
-        Http::fake(function ($request) {
-            return Http::response('{
-                    "workspace": {
-                        "name": "workspace1",
-                        "isolated": false,
-                        "dataStores": "http://localhost:8080/geoserver/rest/workspaces/workspace1/datastores.json",
-                        "coverageStores": "http://localhost:8080/geoserver/rest/workspaces/workspace1/coveragestores.json",
-                        "wmsStores": "http://localhost:8080/geoserver/rest/workspaces/workspace1/wmsstores.json",
-                        "wmtsStores": "http://localhost:8080/geoserver/rest/workspaces/workspace1/wmtsstores.json"
-                    }
-                }', 200);
-        });
-
-        $workspace = GeoserverClient::workspace('workspace1');
+        $workspace = GeoserverClient::workspace($workspaceName);
         $this->assertInstanceOf(Workspace::class, $workspace);
-        $this->assertEquals('workspace1', $workspace->name);
+        $this->assertEquals($workspaceName, $workspace->name);
+
+        $olsWorkspaceName = $workspace->name;
+        $newWorkspaceName = Str::random(32);
+        $workspace->name = $newWorkspaceName;
+
+        $workspace = $workspace->save();
+        $this->assertInstanceOf(Workspace::class, $workspace);
+        $this->assertEquals($newWorkspaceName, $workspace->name);
+        $this->assertFalse(GeoserverClient::workspaceExists($olsWorkspaceName));
+
+        $workspace->isolated = true;
+        $workspace = $workspace->save();
+        $this->assertInstanceOf(Workspace::class, $workspace);
+        $this->assertEquals($newWorkspaceName, $workspace->name);
+        $this->assertTrue($workspace->isolated);
+
+        $datastoreName = Str::random(16);
+        $datastoreDescription = Str::random(32);
+        $datastoreHost = 'postgis'; // as specified in docker-compose.yml service name
+        $datastorePort = 5432; // as specified in docker-compose.yml service port
+        $datastoreDatabase = env('DB_DATABASE');
+        $datastoreSchema = env('DB_SCHEMA');
+        $datastoreUser = env('DB_USERNAME');
+        $datastorePassword = env('DB_PASSWORD');
+
+        $datastore = PostGisDataStore::create($datastoreName, $workspace, $datastoreDescription, $datastoreHost, $datastorePort, $datastoreDatabase, $datastoreSchema, $datastoreUser, $datastorePassword)->save();
+        $this->assertInstanceOf(PostGisDataStore::class, $datastore);
+        $this->assertEquals($datastoreName, $datastore->name);
+
+        $datastores = GeoserverClient::datastores($workspace);
+        $this->assertInstanceOf(Collection::class, $datastores);
+        $this->assertCount(1, $datastores);
+
+        $this->assertInstanceOf(Collection::class, $workspace->datastores());
+        $this->assertCount(1, $workspace->datastores());
+
+        $layerName = Str::random(16);
+
+        $layer = PostGisLayer::create($layerName, 'locations', $datastore)->save();
+        $this->assertInstanceOf(PostGisLayer::class, $layer);
+        $this->assertEquals($layerName, $layer->name);
+
+        $layers = GeoserverClient::featureTypes($datastore);
+        $this->assertInstanceOf(Collection::class, $layers);
+        $this->assertCount(1, $layers);
+
+        $this->assertTrue($layer->delete());
+        $this->assertFalse(GeoserverClient::featureTypeExists($workspace->name, $datastore->name, $layer->name));
+
+        $this->assertTrue($datastore->delete());
+        $this->assertFalse(GeoserverClient::datastoreExists($workspace->name, $datastore->name));
+
+        $this->assertTrue($workspace->delete());
+        $this->assertFalse(GeoserverClient::workspaceExists($workspace->name));
     }
-
-    /** @test */
-    // public function workspace_and_datastores_can_be_persisted_updated_and_deleted_on_server()
-    // {
-    //     $workspaceName = Str::random(32);
-    //     $workspace = Workspace::create($workspaceName)->save();
-
-    //     $this->assertInstanceOf(Workspace::class, $workspace);
-    //     $this->assertEquals($workspaceName, $workspace->name);
-
-    //     $workspaces = GeoserverClient::workspaces();
-    //     $this->assertInstanceOf(Collection::class, $workspaces);
-
-    //     $workspace = GeoserverClient::workspace($workspaceName);
-    //     $this->assertInstanceOf(Workspace::class, $workspace);
-    //     $this->assertEquals($workspaceName, $workspace->name);
-
-    //     $olsWorkspaceName = $workspace->name;
-    //     $newWorkspaceName = Str::random(32);
-    //     $workspace->name = $newWorkspaceName;
-
-    //     $workspace = $workspace->save();
-    //     $this->assertInstanceOf(Workspace::class, $workspace);
-    //     $this->assertEquals($newWorkspaceName, $workspace->name);
-    //     $this->assertFalse(GeoserverClient::workspaceExists($olsWorkspaceName));
-
-    //     $workspace->isolated = true;
-    //     $workspace = $workspace->save();
-    //     $this->assertInstanceOf(Workspace::class, $workspace);
-    //     $this->assertEquals($newWorkspaceName, $workspace->name);
-    //     $this->assertTrue($workspace->isolated);
-
-    //     $datastoreName = Str::random(32);
-    //     $datastoreDescription = Str::random(32);
-    //     $datastoreHost = Str::random(16);
-    //     $datastoreDatabase = Str::random(16);
-    //     $datastoreSchema = Str::random(8);
-    //     $datastoreUser = Str::random(8);
-    //     $datastorePassword = Str::random(16);
-
-    //     $datastore = PostGisDataStore::create($datastoreName, $workspace, $datastoreDescription, $datastoreHost, 5432, $datastoreDatabase, $datastoreSchema, $datastoreUser, $datastorePassword)->save();
-    //     $this->assertInstanceOf(PostGisDataStore::class, $datastore);
-    //     $this->assertEquals($datastoreName, $datastore->name);
-
-    //     $datastores = GeoserverClient::datastores($workspace);
-    //     $this->assertInstanceOf(Collection::class, $datastores);
-    //     $this->assertCount(1, $datastores);
-
-    //     $this->assertInstanceOf(Collection::class, $workspace->datastores());
-    //     $this->assertCount(1, $workspace->datastores());
-
-    //     $this->assertTrue($datastore->delete());
-    //     $this->assertFalse(GeoserverClient::datastoreExists($workspace->name, $datastore->name));
-
-    //     $this->assertTrue($workspace->delete());
-    //     $this->assertFalse(GeoserverClient::workspaceExists($workspace->name));
-    // }
 }
