@@ -63,7 +63,7 @@ class PostGisDataStore extends DataStore
     public function __set($property, $value)
     {
         if (property_exists($this, $property)) {
-            $this->isSaved = !($this->$property !== $value);
+            $this->isSaved = ! ($this->$property !== $value);
             $this->$property = $value;
 
             return $this;
