@@ -1,12 +1,10 @@
 <?php
 
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
-
+use Illuminate\Database\Schema\Blueprint;
 
 class CreateLocationsTable extends Migration
 {
-
     /**
      * Run the migrations.
      *
@@ -14,7 +12,6 @@ class CreateLocationsTable extends Migration
      */
     public function up()
     {
-
         Schema::hasTable('locations') && Schema::drop('locations');
         Schema::create('locations', function (Blueprint $table) {
             $table->increments('id');
@@ -22,7 +19,7 @@ class CreateLocationsTable extends Migration
             $table->timestamps();
         });
 
-        // Only for testing purpose, should be done with a package like mstaack/laravel-postgis in real projects 
+        // Only for testing purpose, should be done with a package like mstaack/laravel-postgis in real projects
         DB::statement('ALTER TABLE locations ADD COLUMN geom geometry(POLYGON,4326)');
     }
 
