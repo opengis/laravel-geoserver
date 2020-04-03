@@ -11,7 +11,7 @@ class PostGisLayer
     private $title = '';
     private $datastore;
 
-    public function __construct(String $name, String $tableName, PostGisDataStore $datastore, $isSaved = false)
+    public function __construct(string $name, string $tableName, PostGisDataStore $datastore, $isSaved = false)
     {
         $this->name = $name;
         $this->oldName = $name;
@@ -36,7 +36,7 @@ class PostGisLayer
     {
         if (property_exists($this, $property)) {
             $property === 'name' && $this->oldName = $this->name;
-            $this->isSaved = !($this->$property !== $value);
+            $this->isSaved = ! ($this->$property !== $value);
             $this->$property = $value;
         }
 
@@ -50,9 +50,9 @@ class PostGisLayer
 
     public function delete()
     {
-        $this->isSaved = !GeoserverClient::deleteFeatureType($this);
+        $this->isSaved = ! GeoserverClient::deleteFeatureType($this);
         $this->name = $this->oldName;
 
-        return !$this->isSaved;
+        return ! $this->isSaved;
     }
 }
