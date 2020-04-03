@@ -8,9 +8,7 @@ php:
 
 env:
   global:
-    - GEOSERVER_URL="http://127.0.0.1:8081/geoserver/"
-    - GEOSERVER_USER="admin"
-    - GEOSERVER_PASSWORD="geoserver"
+
   matrix:
     - COMPOSER_FLAGS="--prefer-lowest"
     - COMPOSER_FLAGS="--prefer-stable"
