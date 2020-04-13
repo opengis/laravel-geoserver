@@ -2,14 +2,14 @@
 
 namespace Opengis\LaravelGeoserver\Tests;
 
-use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use Opengis\LaravelGeoserver\GeoserverClient;
-use Opengis\LaravelGeoserver\LaravelGeoserverServiceProvider;
-use Opengis\LaravelGeoserver\PostGisDataStore;
-use Opengis\LaravelGeoserver\PostGisLayer;
-use Opengis\LaravelGeoserver\Workspace;
 use Orchestra\Testbench\TestCase;
+use Illuminate\Support\Collection;
+use Opengis\LaravelGeoserver\Workspace;
+use Opengis\LaravelGeoserver\PostGisLayer;
+use Opengis\LaravelGeoserver\GeoserverClient;
+use Opengis\LaravelGeoserver\PostGisDataStore;
+use Opengis\LaravelGeoserver\LaravelGeoserverServiceProvider;
 
 class LaravelGeoserverTest extends TestCase
 {
@@ -26,7 +26,7 @@ class LaravelGeoserverTest extends TestCase
 
     protected function getEnvironmentSetUp($app)
     {
-        include_once __DIR__.'/../database/migrations/create_locations_table.php';
+        include_once __DIR__ . '/../database/migrations/create_locations_table.php';
 
         (new \CreateLocationsTable)->up();
     }
@@ -79,8 +79,8 @@ class LaravelGeoserverTest extends TestCase
         $datastoreName = Str::random(16);
         $datastoreDescription = Str::random(32);
         $datastoreHost = 'postgis'; // as specified in docker-compose.yml service name
-        $datastorePort = 5432; // as specified in docker-compose.yml service port
-        $datastoreDatabase = env('DB_DATABASE');
+    $datastorePort = 5432; // as specified in docker-compose.yml service port
+    $datastoreDatabase = env('DB_DATABASE');
         $datastoreSchema = env('DB_SCHEMA');
         $datastoreUser = env('DB_USERNAME');
         $datastorePassword = env('DB_PASSWORD');
