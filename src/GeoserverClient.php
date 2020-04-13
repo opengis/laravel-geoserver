@@ -381,7 +381,6 @@ class GeoserverClient
                     }
                 }
 
-
                 return $layer;
             }
         }
