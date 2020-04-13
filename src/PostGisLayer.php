@@ -37,7 +37,7 @@ class PostGisLayer
     {
         if (property_exists($this, $property)) {
             $property === 'name' && $this->oldName = $this->name;
-            $this->isSaved = !($this->$property !== $value);
+            $this->isSaved = ! ($this->$property !== $value);
             $this->$property = $value;
         }
 
@@ -51,9 +51,9 @@ class PostGisLayer
 
     public function delete()
     {
-        $this->isSaved = !GeoserverClient::deleteFeatureType($this);
+        $this->isSaved = ! GeoserverClient::deleteFeatureType($this);
         $this->name = $this->oldName;
 
-        return !$this->isSaved;
+        return ! $this->isSaved;
     }
 }
