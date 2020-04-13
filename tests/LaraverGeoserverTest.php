@@ -2,16 +2,16 @@
 
 namespace Opengis\LaravelGeoserver\Tests;
 
-use Illuminate\Support\Str;
-use Orchestra\Testbench\TestCase;
 use Illuminate\Support\Collection;
-use Opengis\LaravelGeoserver\Workspace;
-use Opengis\LaravelGeoserver\PostGisLayer;
+use Illuminate\Support\Str;
 use Opengis\LaravelGeoserver\GeoserverClient;
-use Opengis\LaravelGeoserver\PostGisDataStore;
 use Opengis\LaravelGeoserver\LaravelGeoserverServiceProvider;
+use Opengis\LaravelGeoserver\PostGisDataStore;
+use Opengis\LaravelGeoserver\PostGisLayer;
+use Opengis\LaravelGeoserver\Workspace;
+use Orchestra\Testbench\TestCase;
 
-class LaravelGeoserverTest extends TestCase
+class LaraverGeoserverTest extends TestCase
 {
     public function setUp(): void
     {
@@ -26,7 +26,7 @@ class LaravelGeoserverTest extends TestCase
 
     protected function getEnvironmentSetUp($app)
     {
-        include_once __DIR__ . '/../database/migrations/create_locations_table.php';
+        include_once __DIR__.'/../database/migrations/create_locations_table.php';
 
         (new \CreateLocationsTable)->up();
     }
