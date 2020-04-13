@@ -3,17 +3,17 @@
 namespace Opengis\LaravelGeoserver;
 
 use Exception;
-use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+use Opengis\LaravelGeoserver\Exceptions\DatastoreNotFoundException;
+use Opengis\LaravelGeoserver\Exceptions\FeatureTypeNotFoundException;
+use Opengis\LaravelGeoserver\Exceptions\GeomColumnNotFoundException;
+use Opengis\LaravelGeoserver\Exceptions\StyleContentNotFoundException;
 use Opengis\LaravelGeoserver\Exceptions\StyleNotFoundException;
 use Opengis\LaravelGeoserver\Exceptions\TableNotFoundException;
-use Opengis\LaravelGeoserver\Exceptions\DatastoreNotFoundException;
 use Opengis\LaravelGeoserver\Exceptions\WorkspaceNotFoundException;
-use Opengis\LaravelGeoserver\Exceptions\GeomColumnNotFoundException;
-use Opengis\LaravelGeoserver\Exceptions\FeatureTypeNotFoundException;
-use Opengis\LaravelGeoserver\Exceptions\StyleContentNotFoundException;
 
 class GeoserverClient
 {
@@ -29,7 +29,7 @@ class GeoserverClient
         is_null($username) && $username = config('laravel-geoserver.username');
         is_null($password) && $password = config('laravel-geoserver.password');
 
-        !Str::of($baseUri)->endsWith('/') && $baseUri = $baseUri . '/';
+        ! Str::of($baseUri)->endsWith('/') && $baseUri = $baseUri.'/';
 
         self::$baseUri = $baseUri;
         self::$username = $username;
@@ -46,7 +46,7 @@ class GeoserverClient
     private function testConnection()
     {
         self::$client::withBasicAuth(self::$username, self::$password)
-            ->get(self::$baseUri . 'rest/about/version')
+            ->get(self::$baseUri.'rest/about/version')
             ->throw();
     }
 
@@ -54,7 +54,7 @@ class GeoserverClient
     {
         $resources = json_decode(Http::withBasicAuth(self::$username, self::$password)
             ->acceptJson()
-            ->get(self::$baseUri . 'rest/about/version')
+            ->get(self::$baseUri.'rest/about/version')
             ->throw()
             ->body())->about->resource;
 
@@ -71,10 +71,10 @@ class GeoserverClient
     {
         $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
             ->acceptJson()
-            ->get(self::$baseUri . 'rest/workspaces.json')
+            ->get(self::$baseUri.'rest/workspaces.json')
             ->throw());
 
-        if (!is_null($response)) {
+        if (! is_null($response)) {
             if (isset($response->workspaces->workspace)) {
                 return collect($response->workspaces->workspace)->map(function ($item) {
                     return self::workspace($item->name);
@@ -88,11 +88,11 @@ class GeoserverClient
     public static function workspace(string $name)
     {
         $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
-            ->get(self::$baseUri . 'rest/workspaces/' . $name . '.json')
+            ->get(self::$baseUri.'rest/workspaces/'.$name.'.json')
             ->throw()
             ->body());
 
-        if (!is_null($response)) {
+        if (! is_null($response)) {
             return Workspace::create($response->workspace->name, $response->workspace->isolated, true);
         }
         throw new WorkspaceNotFoundException;
@@ -101,10 +101,10 @@ class GeoserverClient
     public static function workspaceExists(string $name)
     {
         $body = Http::withBasicAuth(self::$username, self::$password)
-            ->get(self::$baseUri . 'rest/workspaces/' . $name . '.json')
+            ->get(self::$baseUri.'rest/workspaces/'.$name.'.json')
             ->body();
 
-        return !Str::of($body)->contains('No such workspace');
+        return ! Str::of($body)->contains('No such workspace');
     }
 
     public static function deleteWorkspace(Workspace $workspace)
@@ -112,7 +112,7 @@ class GeoserverClient
         try {
             if (self::workspaceExists($workspace->oldName)) {
                 Http::withBasicAuth(self::$username, self::$password)
-                    ->delete(self::$baseUri . 'rest/workspaces/' . $workspace->oldName . '?recurse=true')
+                    ->delete(self::$baseUri.'rest/workspaces/'.$workspace->oldName.'?recurse=true')
                     ->throw();
             }
 
@@ -126,18 +126,18 @@ class GeoserverClient
     {
         $data = ['workspace' => ['name' => $workspace->name, 'isolated' => $workspace->isolated]];
 
-        if (!$workspace->isSaved) {
-            if (!self::workspaceExists($workspace->oldName)) {
+        if (! $workspace->isSaved) {
+            if (! self::workspaceExists($workspace->oldName)) {
                 Http::withBasicAuth(self::$username, self::$password)
                     ->accept('text/html')
                     ->asJson()
-                    ->post(self::$baseUri . 'rest/workspaces', $data)
+                    ->post(self::$baseUri.'rest/workspaces', $data)
                     ->throw();
             } else {
                 Http::withBasicAuth(self::$username, self::$password)
                     ->accept('text/html')
                     ->asJson()
-                    ->put(self::$baseUri . 'rest/workspaces/' . $workspace->oldName, $data)
+                    ->put(self::$baseUri.'rest/workspaces/'.$workspace->oldName, $data)
                     ->throw();
             }
 
@@ -151,11 +151,11 @@ class GeoserverClient
     {
         $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
             ->acceptJson()
-            ->get(self::$baseUri . 'rest/workspaces/' . $workspace->oldName . '/datastores.json')
+            ->get(self::$baseUri.'rest/workspaces/'.$workspace->oldName.'/datastores.json')
             ->throw()
             ->body());
 
-        if (!is_null($response)) {
+        if (! is_null($response)) {
             if (isset($response->dataStores->dataStore)) {
                 return collect($response->dataStores->dataStore)->map(function ($item) use ($workspace) {
                     return self::datastore($workspace->oldName, $item->name);
@@ -169,20 +169,20 @@ class GeoserverClient
     public static function datastoreExists(string $workspaceName, string $datastoreName)
     {
         $body = Http::withBasicAuth(self::$username, self::$password)
-            ->get(self::$baseUri . 'rest/workspaces/' . $workspaceName . '/datastores/' . $datastoreName . '.json')
+            ->get(self::$baseUri.'rest/workspaces/'.$workspaceName.'/datastores/'.$datastoreName.'.json')
             ->body();
 
-        return !Str::of($body)->contains('No such datastore');
+        return ! Str::of($body)->contains('No such datastore');
     }
 
     public static function datastore(string $workspaceName, string $datastoreName)
     {
         $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
-            ->get(self::$baseUri . 'rest/workspaces/' . $workspaceName . '/datastores/' . $datastoreName . '.json')
+            ->get(self::$baseUri.'rest/workspaces/'.$workspaceName.'/datastores/'.$datastoreName.'.json')
             ->throw()
             ->body());
 
-        if (!is_null($response)) {
+        if (! is_null($response)) {
             $ds = $response->dataStore;
 
             if ($ds->type == 'PostGIS') {
@@ -237,8 +237,8 @@ class GeoserverClient
     public static function saveDatastore(Datastore $datastore)
     {
         if ($datastore instanceof PostGisDataStore) {
-            if (!$datastore->isSaved) {
-                !self::workspaceExists($datastore->workspace->name) && $datastore->workspace = self::saveWorkspace($datastore->workspace);
+            if (! $datastore->isSaved) {
+                ! self::workspaceExists($datastore->workspace->name) && $datastore->workspace = self::saveWorkspace($datastore->workspace);
                 $data = [
                     'dataStore' => [
                         'name' => $datastore->name,
@@ -279,11 +279,11 @@ class GeoserverClient
                     ],
                 ];
 
-                if (!self::datastoreExists($datastore->workspace->oldName, $datastore->oldName)) {
+                if (! self::datastoreExists($datastore->workspace->oldName, $datastore->oldName)) {
                     Http::withBasicAuth(self::$username, self::$password)
                         ->accept('text/html')
                         ->asJson()
-                        ->post(self::$baseUri . 'rest/workspaces/' . $datastore->workspace->name . '/datastores', $data)
+                        ->post(self::$baseUri.'rest/workspaces/'.$datastore->workspace->name.'/datastores', $data)
                         ->throw();
 
                     return self::datastore($datastore->workspace->name, $datastore->name);
@@ -291,7 +291,7 @@ class GeoserverClient
                     Http::withBasicAuth(self::$username, self::$password)
                         ->accept('text/html')
                         ->asJson()
-                        ->put(self::$baseUri . 'rest/workspaces/' . $datastore->workspace->name . '/datastores/' . $datastore->oldName, $data)
+                        ->put(self::$baseUri.'rest/workspaces/'.$datastore->workspace->name.'/datastores/'.$datastore->oldName, $data)
                         ->throw();
 
                     return self::datastore($datastore->workspace->name, $datastore->name);
@@ -307,7 +307,7 @@ class GeoserverClient
         try {
             if (self::datastoreExists($datastore->workspace->oldName, $datastore->oldName)) {
                 Http::withBasicAuth(self::$username, self::$password)
-                    ->delete(self::$baseUri . 'rest/workspaces/' . $datastore->workspace->oldName . '/datastores/' . $datastore->oldName . '?recurse=true')
+                    ->delete(self::$baseUri.'rest/workspaces/'.$datastore->workspace->oldName.'/datastores/'.$datastore->oldName.'?recurse=true')
                     ->throw();
             }
 
@@ -320,21 +320,21 @@ class GeoserverClient
     public static function featureTypeExists(string $workspaceName, string $datastoreName, string $featureTypeName)
     {
         $body = Http::withBasicAuth(self::$username, self::$password)
-            ->get(self::$baseUri . 'rest/workspaces/' . $workspaceName . '/datastores/' . $datastoreName . '/featuretypes/' . $featureTypeName . '.json')
+            ->get(self::$baseUri.'rest/workspaces/'.$workspaceName.'/datastores/'.$datastoreName.'/featuretypes/'.$featureTypeName.'.json')
             ->body();
 
-        return !Str::of($body)->contains('No such feature type');
+        return ! Str::of($body)->contains('No such feature type');
     }
 
     public static function featureTypes(Datastore $datastore)
     {
         $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
             ->acceptJson()
-            ->get(self::$baseUri . 'rest/workspaces/' . $datastore->workspace->oldName . '/datastores/' . $datastore->oldName . '/featuretypes.json')
+            ->get(self::$baseUri.'rest/workspaces/'.$datastore->workspace->oldName.'/datastores/'.$datastore->oldName.'/featuretypes.json')
             ->throw()
             ->body());
 
-        if (!is_null($response)) {
+        if (! is_null($response)) {
             if (isset($response->featureTypes->featureType)) {
                 return collect($response->featureTypes->featureType)->map(function ($item) use ($datastore) {
                     return self::featureType($datastore->workspace->name, $datastore->name, $item->name);
@@ -351,11 +351,11 @@ class GeoserverClient
 
         $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
             ->acceptJson()
-            ->get(self::$baseUri . 'rest/workspaces/' . $datastore->workspace->oldName . '/datastores/' . $datastore->oldName . '/featuretypes/' . $featureTypeName . '.json')
+            ->get(self::$baseUri.'rest/workspaces/'.$datastore->workspace->oldName.'/datastores/'.$datastore->oldName.'/featuretypes/'.$featureTypeName.'.json')
             ->throw()
             ->body());
 
-        if (!is_null($response)) {
+        if (! is_null($response)) {
             if (isset($response->featureType)) {
                 $ft = $response->featureType;
                 $layer = PostGisLayer::create($ft->name, $ft->nativeName, $datastore);
@@ -365,11 +365,11 @@ class GeoserverClient
 
                 $layerInfo = json_decode(Http::withBasicAuth(self::$username, self::$password)
                     ->acceptJson()
-                    ->get(self::$baseUri . 'rest/layers/' . $datastore->workspace->oldName . ':' . $ft->name . '.json')
+                    ->get(self::$baseUri.'rest/layers/'.$datastore->workspace->oldName.':'.$ft->name.'.json')
                     ->throw()
                     ->body());
 
-                if (!is_null($layerInfo)) {
+                if (! is_null($layerInfo)) {
                     if (isset($layerInfo->layer)) {
                         $ws = isset($layerInfo->layer->defaultStyle->workspace) ? $layerInfo->layer->defaultStyle->workspace : null;
                         if ($ws) {
@@ -391,29 +391,29 @@ class GeoserverClient
 
     public static function saveFeatureType(PostGisLayer $layer)
     {
-        if (!self::tableExists($layer->tableName, $layer->datastore->schema)) {
+        if (! self::tableExists($layer->tableName, $layer->datastore->schema)) {
             throw new TableNotFoundException;
         }
-        if (!self::tableHasGeom($layer->tableName, $layer->datastore->schema)) {
+        if (! self::tableHasGeom($layer->tableName, $layer->datastore->schema)) {
             throw new GeomColumnNotFoundException;
         }
         $srid = self::getSrid($layer->tableName, $layer->datastore->schema);
         $srid == 0 && $srid = 4326;
 
-        if (!self::featureTypeExists($layer->datastore->workspace->name, $layer->datastore->name, $layer->name)) {
+        if (! self::featureTypeExists($layer->datastore->workspace->name, $layer->datastore->name, $layer->name)) {
             $data = [
                 'featureType' => [
                     'name' => $layer->name,
                     'nativeName' => $layer->tableName,
                     'title' => strlen($layer->title) > 0 ? $layer->title : $layer->name,
-                    'nativeCRS' => 'EPSG:' . $srid,
-                    'srs' => 'EPSG:' . $srid,
+                    'nativeCRS' => 'EPSG:'.$srid,
+                    'srs' => 'EPSG:'.$srid,
                     'nativeBoundingBox' => [
                         'minx' => -180,
                         'maxx' => 180,
                         'miny' => -90,
                         'maxy' => 90,
-                        'crs' => 'EPSG:' . $srid,
+                        'crs' => 'EPSG:'.$srid,
                     ],
                 ],
             ];
@@ -421,7 +421,7 @@ class GeoserverClient
             Http::withBasicAuth(self::$username, self::$password)
                 ->accept('text/html')
                 ->asJson()
-                ->post(self::$baseUri . 'rest/workspaces/' . $layer->datastore->workspace->name . '/datastores/' . $layer->datastore->name . '/featuretypes', $data)
+                ->post(self::$baseUri.'rest/workspaces/'.$layer->datastore->workspace->name.'/datastores/'.$layer->datastore->name.'/featuretypes', $data)
                 ->throw();
         } else {
             $data = [
@@ -429,14 +429,14 @@ class GeoserverClient
                     'name' => $layer->name,
                     'nativeName' => $layer->tableName,
                     'title' => strlen($layer->title) > 0 ? $layer->title : $layer->name,
-                    'nativeCRS' => 'EPSG:' . $srid,
-                    'srs' => 'EPSG:' . $srid,
+                    'nativeCRS' => 'EPSG:'.$srid,
+                    'srs' => 'EPSG:'.$srid,
                 ],
             ];
             Http::withBasicAuth(self::$username, self::$password)
                 ->accept('text/html')
                 ->asJson()
-                ->put(self::$baseUri . 'rest/workspaces/' . $layer->datastore->workspace->name . '/datastores/' . $layer->datastore->name . '/featuretypes/' . $layer->oldName, $data)
+                ->put(self::$baseUri.'rest/workspaces/'.$layer->datastore->workspace->name.'/datastores/'.$layer->datastore->name.'/featuretypes/'.$layer->oldName, $data)
                 ->throw();
         }
 
@@ -448,7 +448,7 @@ class GeoserverClient
         try {
             if (self::featureTypeExists($layer->datastore->workspace->oldName, $layer->datastore->oldName, $layer->oldName)) {
                 Http::withBasicAuth(self::$username, self::$password)
-                    ->delete(self::$baseUri . 'rest/workspaces/' . $layer->datastore->workspace->oldName . '/datastores/' . $layer->datastore->oldName . '/featuretypes/' . $layer->oldName . '?recurse=true')
+                    ->delete(self::$baseUri.'rest/workspaces/'.$layer->datastore->workspace->oldName.'/datastores/'.$layer->datastore->oldName.'/featuretypes/'.$layer->oldName.'?recurse=true')
                     ->throw();
             }
 
@@ -458,7 +458,8 @@ class GeoserverClient
         }
     }
 
-    public static function saveStyle(Style $style){
+    public static function saveStyle(Style $style)
+    {
         dd($style);
     }
 
@@ -466,7 +467,7 @@ class GeoserverClient
     {
         if ($workspaceName) {
             if (self::workspaceExists($workspaceName)) {
-                $url = self::$baseUri . 'rest/workspaces/' . $workspaceName . '/styles';
+                $url = self::$baseUri.'rest/workspaces/'.$workspaceName.'/styles';
                 $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
                     ->acceptJson()
                     ->get($url)
@@ -476,21 +477,21 @@ class GeoserverClient
                 throw new WorkspaceNotFoundException;
             }
         } else {
-            $url = self::$baseUri . 'rest/styles';
+            $url = self::$baseUri.'rest/styles';
             $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
                 ->acceptJson()
                 ->get($url)
                 ->throw()
                 ->body());
         }
-        if (!is_null($response)) {
+        if (! is_null($response)) {
             if (isset($response->styles->style)) {
                 return collect($response->styles->style)->map(function ($item) use ($workspaceName) {
-                    if (!in_array($item->name, ['generic', 'line', 'point', 'polygon', 'raster'])) {
+                    if (! in_array($item->name, ['generic', 'line', 'point', 'polygon', 'raster'])) {
                         return self::style($item->name, $workspaceName);
                     }
                 })->filter(function ($item) {
-                    return !is_null($item);
+                    return ! is_null($item);
                 });
             }
         }
@@ -502,7 +503,7 @@ class GeoserverClient
     {
         if ($workspaceName) {
             if (self::workspaceExists($workspaceName)) {
-                $url = self::$baseUri . 'rest/workspaces/' . $workspaceName . '/styles/' . $styleName . '.json';
+                $url = self::$baseUri.'rest/workspaces/'.$workspaceName.'/styles/'.$styleName.'.json';
                 try {
                     $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
                         ->acceptJson()
@@ -516,7 +517,7 @@ class GeoserverClient
                 throw new WorkspaceNotFoundException;
             }
         } else {
-            $url = self::$baseUri . 'rest/styles/' . $styleName . '.json';
+            $url = self::$baseUri.'rest/styles/'.$styleName.'.json';
             try {
                 $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
                     ->acceptJson()
@@ -528,16 +529,16 @@ class GeoserverClient
             }
         }
 
-        if (!is_null($response)) {
+        if (! is_null($response)) {
             if (isset($response->style)) {
                 if ($response->style->name) {
                     $style = Style::create($response->style->name);
                 }
-                $workspaceName && $style->workspace = GeoserverClient::workspace($workspaceName);
+                $workspaceName && $style->workspace = self::workspace($workspaceName);
                 $styleUrl = str_replace(basename($url), $response->style->filename, $url);
 
                 try {
-                    if (!in_array($style->name, ['generic', 'line', 'point', 'polygon', 'raster'])) {
+                    if (! in_array($style->name, ['generic', 'line', 'point', 'polygon', 'raster'])) {
                         $style->styleContent = Http::withBasicAuth(self::$username, self::$password)
                             ->get($styleUrl)
                             ->throw()
@@ -556,7 +557,7 @@ class GeoserverClient
     {
         $response = json_decode(Http::withBasicAuth(self::$username, self::$password)
             ->acceptJson()
-            ->get(self::$baseUri . 'rest/layers/' . $workspaceName . ':' . $featureTypeName . '.json')
+            ->get(self::$baseUri.'rest/layers/'.$workspaceName.':'.$featureTypeName.'.json')
             ->throw()
             ->body());
 
