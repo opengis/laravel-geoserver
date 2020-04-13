@@ -380,7 +380,7 @@ class GeoserverClient
                         $layer->defaultStyle = self::style($name, $ws);
                     }
                 }
-                dd($layer);
+
 
                 return $layer;
             }
@@ -460,7 +460,7 @@ class GeoserverClient
 
     public static function saveStyle(Style $style)
     {
-        dd($style);
+        // dd($style);
     }
 
     public static function styles(string $workspaceName = null)
@@ -561,7 +561,7 @@ class GeoserverClient
             ->throw()
             ->body());
 
-        dd($response);
+        // dd($response);
     }
 
     protected static function getSrid($tableName, $schemaName)
