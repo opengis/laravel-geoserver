@@ -32,9 +32,9 @@ class Workspace
 
     public function __set($property, $value)
     {
-        if (property_exists($this, $property) && ! in_array($property, $this->forbiddenSet)) {
+        if (property_exists($this, $property) && !in_array($property, $this->forbiddenSet)) {
             $property === 'name' && $this->oldName = $this->name;
-            $this->isSaved = ! ($this->$property !== $value);
+            $this->isSaved = !($this->$property !== $value);
             $this->$property = $value;
         }
 
@@ -48,10 +48,10 @@ class Workspace
 
     public function delete()
     {
-        $this->isSaved = ! GeoserverClient::deleteWorkspace($this);
+        $this->isSaved = !GeoserverClient::deleteWorkspace($this);
         $this->name = $this->oldName;
 
-        return ! $this->isSaved;
+        return !$this->isSaved;
     }
 
     public function datastores()

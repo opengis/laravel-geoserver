@@ -2,22 +2,19 @@
 
 namespace Opengis\LaravelGeoserver;
 
-class PostGisLayer
+class Style
 {
     private $isSaved = false;
     private $name = '';
     private $oldName = '';
-    private $tableName = '';
-    private $title = '';
-    private $datastore;
-    private $defaultStyle;
+    private $styleContent = '';
+    private $workspace;
+    private $forbiddenSet = ['forbiddenSet', 'isSaved', 'oldName'];
 
-    public function __construct(string $name, string $tableName, PostGisDataStore $datastore, $isSaved = false)
+    public function __construct(string $name, $isSaved = false)
     {
         $this->name = $name;
         $this->oldName = $name;
-        $this->tableName = $tableName;
-        $this->datastore = $datastore;
         $this->isSaved = $isSaved;
     }
 
@@ -35,7 +32,7 @@ class PostGisLayer
 
     public function __set($property, $value)
     {
-        if (property_exists($this, $property)) {
+        if (property_exists($this, $property) && !in_array($property, $this->forbiddenSet)) {
             $property === 'name' && $this->oldName = $this->name;
             $this->isSaved = !($this->$property !== $value);
             $this->$property = $value;
@@ -44,16 +41,21 @@ class PostGisLayer
         return $this;
     }
 
-    public function save()
-    {
-        return GeoserverClient::saveFeatureType($this);
-    }
+    // public function save()
+    // {
+    //     return GeoserverClient::saveWorkspace($this);
+    // }
 
-    public function delete()
-    {
-        $this->isSaved = !GeoserverClient::deleteFeatureType($this);
-        $this->name = $this->oldName;
+    // public function delete()
+    // {
+    //     $this->isSaved = !GeoserverClient::deleteWorkspace($this);
+    //     $this->name = $this->oldName;
 
-        return !$this->isSaved;
-    }
+    //     return !$this->isSaved;
+    // }
+
+    // public function datastores()
+    // {
+    //     return GeoserverClient::datastores($this);
+    // }
 }
